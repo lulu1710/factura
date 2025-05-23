@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>INVOICE</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 800px;
+      margin: auto;
+      background-color: #f9f9f9;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+
+    .top-info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+
+    .invoice-edit {
+      border: none;
+      font-weight: bold;
+      font-size: 16px;
+      background-color: transparent;
+      width: 150px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      text-align: center;
+    }
+
+    th:nth-child(1), td:nth-child(1), /* Quantity */
+    th:nth-child(3), td:nth-child(3), /* Price */
+    th:nth-child(4), td:nth-child(4) { /* Amount */
+      width: 15%;
+    }
+
+    th:nth-child(2), td:nth-child(2) { /* Item */
+      width: 55%;
+    }
+
+    td {
+      height: 60px; /* Para dos líneas */
+    }
+
+    input, select {
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+      text-align: center;
+      padding: 10px;
+      font-size: 14px;
+    }
+
+    .total {
+      font-size: 1.2em;
+      font-weight: bold;
+      text-align: right;
+      margin-top: 15px;
+    }
+
+    .buttons {
+      margin-top: 15px;
+      text-align: center;
+    }
+
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      font-size: 14px;
+      border: none;
+      border-radius: 5px;
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+    }
+
+    button.remove {
+      background-color: #f44336;
+    }
+
+    .thank-you {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 1.1em;
+      font-weight: bold;
+      color: #555;
+    }
+
+    /* Ocultar botones al imprimir */
+    @media print {
+      .buttons {
+        display: none;
+      }
+
+      .invoice-edit {
+        border: none;
+        outline: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>INVOICE</h1>
+
+  <div class="top-info">
+    <div>Date: <span id="current-date"></span></div>
+    <div>Invoice Number: <input class="invoice-edit" id="invoice-number" value=""></div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Quantity</th>
+        <th>Item</th>
+        <th>Price</th>
+        <th>Amount</th>
+      </tr>
+    </thead>
+    <tbody id="invoice-body">
+      <tr>
+        <td><input type="number" min="0" value="0" onchange="calculate()" oninput="calculate()"></td>
+        <td><select onchange="calculate()">
+            <option value="Coffee">Coffee</option>
+            <option value="Tea">Tea</option>
+            <option value="Bread">Bread</option>
+          </select></td>
+        <td><input type="number" min="0" value="0" onchange="calculate()" oninput="calculate()"></td>
+        <td><input type="text" readonly></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="buttons">
+    <button onclick="addRow()">➕ Add Row</button>
+    <button class="remove" onclick="removeRow()">➖ Remove Row</button>
+    <button onclick="addItem()">Add New Item</button>
+    <button onclick="removeItem()">Remove Item</button>
+  </div>
+
+  <div class="total">Total: $<span id="total">0.00</span></div>
+
+  <div class="thank-you">Thank you for your purchase!</div>
+
+  <script>
+    let itemOptions = ["Coffee", "Tea", "Bread"];
+
+    function calculate() {
+      let rows = document.querySelectorAll('#invoice-body tr');
+      let total = 0;
+
+      rows.forEach(row => {
+        let qty = parseFloat(row.cells[0].querySelector('input').value) || 0;
+        let price = parseFloat(row.cells[2].querySelector('input').value) || 0;
+        let amount = qty * price;
+        row.cells[3].querySelector('input').value = amount.toFixed(2);
+        total += amount;
+      });
+
+      document.getElementById('total').textContent = total.toFixed(2);
+    }
+
+    function addRow() {
+      let tbody = document.getElementById('invoice-body');
+      let row = document.createElement('tr');
+
+      row.innerHTML = `
+        <td><input type="number" min="0" value="0" onchange="calculate()" oninput="calculate()"></td>
+        <td><select onchange="calculate()">${generateItemOptions()}</select></td>
+        <td><input type="number" min="0" value="0" onchange="calculate()" oninput="calculate()"></td>
+        <td><input type="text" readonly></td>
+      `;
+
+      tbody.appendChild(row);
+    }
+
+    function generateItemOptions() {
+      return itemOptions.map(item => `<option value="${item}">${item}</option>`).join('');
+    }
+
+    function removeRow() {
+      let tbody = document.getElementById('invoice-body');
+      if (tbody.rows.length > 1) {
+        tbody.deleteRow(-1);
+        calculate();
+      }
+    }
+
+    function addItem() {
+      const newItem = prompt("Enter new item name:");
+      if (newItem && !itemOptions.includes(newItem)) {
+        itemOptions.push(newItem);
+        // Actualiza los selects
+        updateSelectOptions();
+      }
+    }
+
+    function updateSelectOptions() {
+      const selects = document.querySelectorAll('select');
+      selects.forEach(select => {
+        select.innerHTML = generateItemOptions();  // Actualizar las opciones
+      });
+    }
+
+    function removeItem() {
+      let dropdown = document.createElement("select");
+      dropdown.innerHTML = generateItemOptions(); // Generar opciones del select
+
+      let confirmButton = document.createElement("button");
+      confirmButton.textContent = "Confirm";
+      confirmButton.onclick = function () {
+        let selectedItem = dropdown.value;
+        if (itemOptions.includes(selectedItem)) {
+          itemOptions = itemOptions.filter(item => item !== selectedItem);
+          // Actualizar opciones
+          updateSelectOptions();
+        }
+        dropdown.remove();
+        confirmButton.remove();
+      };
+
+      document.body.appendChild(dropdown);
+      document.body.appendChild(confirmButton);
+    }
+
+    function generateInvoiceNumber() {
+      const now = new Date();
+      return 'INV-' + now.getFullYear().toString().slice(2) +
+             (now.getMonth()+1).toString().padStart(2, '0') +
+             now.getDate().toString().padStart(2, '0') +
+             '-' + Math.floor(Math.random() * 9000 + 1000);
+    }
+
+    // Inicializar
+    document.getElementById("current-date").textContent = new Date().toLocaleDateString();
+    document.getElementById("invoice-number").value = generateInvoiceNumber();
+    window.onload = calculate;
+  </script>
+</body>
+</html>
